@@ -8,34 +8,34 @@ namespace Platformer
     {
         public float movingSpeed;
         public float jumpForce;
+        public float MovementDeadZone = 0.25f;
 
-        public float GroundDetectionWidth = 1f;
-        public float GroundDetectionRadius = 0.2f;
         public float NearGroundDetectionRadius = 0.2f;
         public float ArtifactCheckRadius = 1f;
 
         public float CoyoteTime;
-        public float JumpBuffer;
-        public float JumpResetTime = 0.25f;
-        public float JumpRetractTime = 0.25f;
         public float JumpDecay = 1f;
+        public int JumpLevels = 4;
 
         public int SpriteDirection = 1;
-        
+
         public LayerMask GroundMask = -1;
         public LayerMask ArtifactMask;
 
         public float InputRangeX = 1f / 8f;
-        public float InputRangeY = 16;
+        public float InputRangeY = 1f / 8f;
 
         public CapsuleCollider2D GroundDetector;
         public CapsuleCollider2D NearGroundDetector;
+
+        public GameObject ProjectileTemplate;
+        public float ShootTime = 0.125f;
+        public float ProjectileSpeed = 1;
         
-        [HideInInspector] public bool deathState = false;
+        [HideInInspector] public bool deathState;
 
         private bool isGrounded;
         private bool isNearGround;
-        public Transform groundCheck;
 
         private new Transform transform;
         private new Rigidbody2D rigidbody;
@@ -47,6 +47,7 @@ namespace Platformer
         private float lastJumpValue;
         private float minJumpInterval = 0.25f;
         private float nextJumpTime = float.NegativeInfinity;
+        private float clickMouseTime = float.NegativeInfinity;
         private Vector3 clickMousePosition;
         private Vector3 lastMousePosition;
 
@@ -71,6 +72,7 @@ namespace Platformer
             if (Input.GetMouseButtonDown(0))
             {
                 clickMousePosition = Input.mousePosition;
+                clickMouseTime = Time.time;
             }
             else
             {
@@ -94,20 +96,17 @@ namespace Platformer
             }
 
             {
-                var range = 16f;
-                var delta = smoothMouseDelta.y / range;
+                var delta = smoothMouseDelta.y / (InputRangeY * Screen.height);
                 jumpController.CoyoteTime = CoyoteTime;
-                jumpController.JumpBuffer = JumpBuffer;
-                jumpController.JumpResetTime = JumpResetTime;
-                jumpController.JumpRetractTime = JumpRetractTime;
                 jumpController.JumpDecay = JumpDecay;
+                jumpController.JumpLevels = JumpLevels;
                 jumpController.Update(isNearGround, delta);
             }
 
             if (!isGrounded || (Time.time > nextJumpTime) || (smoothMouseDelta.y < 0))
                 lastJumpValue = 0;
 
-            if (GetInputMove(out var moveValue))
+            if (GetInputMove(out var moveValue) && (Mathf.Abs(moveValue) > MovementDeadZone))
             {
                 moveValue *= movingSpeed;
                 transform.position += transform.right * (moveValue * Time.deltaTime);
@@ -118,15 +117,6 @@ namespace Platformer
                 if (isGrounded) animator.SetInteger("playerState", 0); // Turn on idle animation
             }
 
-            // if (GetInputJump(out var jumpValue) && isGrounded && (nextJumpTime < Time.time))
-            // if (GetInputJump(out var jumpValue) && isGrounded)
-            // {
-            //     var deltaJump = Mathf.Max(jumpValue - lastJumpValue, 0);
-            //     lastJumpValue = Mathf.Max(lastJumpValue, jumpValue);
-            //     jumpValue = deltaJump * jumpForce;
-            //     rigidbody.AddForce(transform.up * jumpValue, ForceMode2D.Impulse);
-            //     nextJumpTime = Time.time + minJumpInterval;
-            // }
             if (jumpController.RelativeImpulse > 0)
             {
                 var velocity = rigidbody.velocity;
@@ -146,12 +136,32 @@ namespace Platformer
 
             if ((System.Math.Abs(moveValue) > 0))
             {
-                Vector3 scale = transform.localScale;
-                scale.x = Mathf.Abs(scale.x) * (SpriteDirection == (int) Mathf.Sign(moveValue) ? 1 : -1);
-                transform.localScale = scale;
+                AlignSprite(moveValue);
             }
 
+            if (Input.GetMouseButtonUp(0) && (Time.time < clickMouseTime + ShootTime))
+            {
+                var camera = Camera.main;
+                var targetPosition = camera.ScreenToWorldPoint(Input.mousePosition);
+                var sourcePosition = ProjectileTemplate.transform.position;
+                var deltaVector = (Vector2)(targetPosition - sourcePosition);
+                AlignSprite(deltaVector.x);
+                
+                var projectile = Instantiate(ProjectileTemplate);
+                projectile.SetActive(true);
+                projectile.transform.position = sourcePosition;
+                var projectileRigidbody = projectile.GetComponent<Rigidbody2D>();
+                projectileRigidbody.velocity = deltaVector.normalized * ProjectileSpeed;
+            }
+            
             lastMousePosition = Input.mousePosition;
+        }
+
+        private void AlignSprite(float moveValue)
+        {
+            Vector3 scale = transform.localScale;
+            scale.x = Mathf.Abs(scale.x) * (SpriteDirection == (int) Mathf.Sign(moveValue) ? 1 : -1);
+            transform.localScale = scale;
         }
 
         // private void OnGUI()
@@ -195,16 +205,7 @@ namespace Platformer
 
         private void CheckGround()
         {
-            // var center = groundCheck.transform.position;
-            //
-            // var extents = new Vector2(GroundDetectionWidth, GroundDetectionRadius);
-            // isGrounded = CheckGroundOverlap(center, extents);
             isGrounded = GroundDetector.IsTouchingLayers(GroundMask);
-
-            // var velocity = rigidbody.velocity;
-            // var radius = GroundDetectionRadius + Mathf.Max(-velocity.y * Time.deltaTime * NearGroundDetectionRadius, 0);
-            // extents = new Vector2(GroundDetectionWidth, radius);
-            // isNearGround = CheckGroundOverlap(center, extents);
 
             var nearSize = GroundDetector.size;
             nearSize.y += Mathf.Max(-rigidbody.velocity.y * Time.deltaTime * NearGroundDetectionRadius, 0);
@@ -212,18 +213,6 @@ namespace Platformer
             isNearGround = NearGroundDetector.IsTouchingLayers(GroundMask);
         }
 
-        private Collider2D[] physicsCastResults = new Collider2D[10];
-
-        private bool CheckGroundOverlap(Vector2 center, Vector2 extents)
-        {
-            var direction = CapsuleDirection2D.Horizontal;
-            var angle = 0;
-            var size = Physics2D.OverlapCapsuleNonAlloc(center, extents * 2, direction, angle,
-                physicsCastResults, GroundMask);
-            // var size = Physics2D.OverlapCircleNonAlloc(center, extents.y, physicsCastResults, GroundMask);
-            return size > 0;
-        }
-        
         private void CheckArtifact()
         {
             var center = transform.position;
@@ -262,14 +251,8 @@ namespace Platformer
         {
             // Time after the player was last grounded to still allow jumping
             public float CoyoteTime;
-
-            // Time since the last jump intention to allow when the player touched the ground
-            public float JumpBuffer;
-
-            public float JumpResetTime = 0.25f;
-            public float JumpRetractTime = 0.25f;
-
             public float JumpDecay = 1f;
+            public int JumpLevels = 4;
 
             public float RelativeImpulse;
 
@@ -287,39 +270,22 @@ namespace Platformer
                 if (isGrounded)
                     lastGroundedTime = time;
 
-                // if (time > retractingTime + JumpRetractTime)
-                // {
-                //     jumpIntention = Mathf.Clamp01(jumpIntention + Mathf.Clamp01(relativeAcceleration));
-                //
-                //     if (jumpIntention - lastJumpIntention > 0.01f)
-                //     {
-                //         jumpEndTime = time;
-                //     }
-                //     else if (time > jumpEndTime + JumpResetTime)
-                //     {
-                //         retractingTime = time;
-                //     }
-                // }
-                // else
-                // {
-                //     jumpIntention = 0;
-                //     lastJumpIntention = 0;
-                // }
-                var jumpDecay = JumpDecay * Time.deltaTime;
-                // jumpIntention = Mathf.Clamp01(jumpIntention + Mathf.Clamp01(relativeAcceleration) - jumpDecay);
-                jumpIntention = Mathf.Clamp01(jumpIntention + relativeAcceleration - jumpDecay);
-                lastJumpIntention = Mathf.Min(lastJumpIntention, jumpIntention);
+                jumpIntention = Mathf.Clamp01(jumpIntention + relativeAcceleration - JumpDecay * Time.deltaTime);
+
+                var snappedIntention = Mathf.FloorToInt(jumpIntention * (JumpLevels + 1)) / (float) JumpLevels;
+                snappedIntention = Mathf.Clamp01(snappedIntention);
+                lastJumpIntention = Mathf.Min(lastJumpIntention, snappedIntention);
 
                 if (time <= lastGroundedTime + CoyoteTime)
                 {
-                    RelativeImpulse = jumpIntention - lastJumpIntention;
+                    RelativeImpulse = snappedIntention - lastJumpIntention;
                 }
                 else
                 {
                     RelativeImpulse = 0;
                 }
 
-                lastJumpIntention = jumpIntention;
+                lastJumpIntention = snappedIntention;
             }
         }
     }
