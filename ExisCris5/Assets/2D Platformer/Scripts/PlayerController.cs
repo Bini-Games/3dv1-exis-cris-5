@@ -9,13 +9,16 @@ namespace Platformer
         public float movingSpeed;
         public float jumpForce;
 
-        // Time after the player was last grounded to still allow jumping
         public float CoyoteTime;
-
-        // Time since the last jump intention to allow when the player touched the ground
         public float JumpBuffer;
+        public float JumpResetTime = 0.25f;
+        public float JumpRetractTime = 0.25f;
 
-        private bool facingRight = false;
+        public int SpriteDirection = 1;
+
+        public float InputRangeX = 1f / 8f;
+        public float InputRangeY = 16;
+
         [HideInInspector] public bool deathState = false;
 
         private bool isGrounded;
@@ -33,6 +36,8 @@ namespace Platformer
         private float nextJumpTime = float.NegativeInfinity;
         private Vector3 clickMousePosition;
         private Vector3 lastMousePosition;
+
+        private JumpController jumpController = new JumpController();
 
         void Start()
         {
@@ -53,9 +58,36 @@ namespace Platformer
             {
                 clickMousePosition = Input.mousePosition;
             }
+            else
+            {
+                var absoluteRangeX = Screen.width * InputRangeX;
+                var delta = clickMousePosition.x - Input.mousePosition.x;
+                if (Mathf.Abs(delta) > absoluteRangeX)
+                {
+                    clickMousePosition.x = Input.mousePosition.x + Mathf.Sign(delta) * absoluteRangeX;
+                }
+            }
 
-            mouseDelta = Input.mousePosition - lastMousePosition;
-            smoothMouseDelta = Vector3.Lerp(smoothMouseDelta, mouseDelta, 0.75f);
+            if (Input.GetMouseButton(0))
+            {
+                mouseDelta = Input.mousePosition - lastMousePosition;
+                smoothMouseDelta = Vector3.Lerp(smoothMouseDelta, mouseDelta, 0.75f);
+            }
+            else
+            {
+                mouseDelta = default;
+                smoothMouseDelta = default;
+            }
+
+            {
+                var range = 16f;
+                var delta = smoothMouseDelta.y / range;
+                jumpController.CoyoteTime = CoyoteTime;
+                jumpController.JumpBuffer = JumpBuffer;
+                jumpController.JumpResetTime = JumpResetTime;
+                jumpController.JumpRetractTime = JumpRetractTime;
+                jumpController.Update(isGrounded, delta);
+            }
 
             if (!isGrounded || (Time.time > nextJumpTime) || (smoothMouseDelta.y < 0))
                 lastJumpValue = 0;
@@ -72,28 +104,52 @@ namespace Platformer
             }
 
             // if (GetInputJump(out var jumpValue) && isGrounded && (nextJumpTime < Time.time))
-            if (GetInputJump(out var jumpValue) && isGrounded)
+            // if (GetInputJump(out var jumpValue) && isGrounded)
+            // {
+            //     var deltaJump = Mathf.Max(jumpValue - lastJumpValue, 0);
+            //     lastJumpValue = Mathf.Max(lastJumpValue, jumpValue);
+            //     jumpValue = deltaJump * jumpForce;
+            //     rigidbody.AddForce(transform.up * jumpValue, ForceMode2D.Impulse);
+            //     nextJumpTime = Time.time + minJumpInterval;
+            // }
+            if (jumpController.RelativeImpulse > 0)
             {
-                var deltaJump = Mathf.Max(jumpValue - lastJumpValue, 0);
-                lastJumpValue = Mathf.Max(lastJumpValue, jumpValue);
-                jumpValue = deltaJump * jumpForce;
+                var jumpValue = jumpController.RelativeImpulse * jumpForce;
                 rigidbody.AddForce(transform.up * jumpValue, ForceMode2D.Impulse);
                 nextJumpTime = Time.time + minJumpInterval;
             }
 
-            if (!isGrounded) animator.SetInteger("playerState", 2); // Turn on jump animation
+            if (!isGrounded)
+            {
+                var isUp = rigidbody.velocity.y > 0;
+                animator.SetInteger("playerState", isUp ? 2 : 3); // Turn on jump animation
+            }
 
-            if ((System.Math.Abs(moveValue) > 0) && (facingRight != (moveValue > 0)))
-                Flip();
+            if ((System.Math.Abs(moveValue) > 0))
+            {
+                Vector3 scale = transform.localScale;
+                scale.x = Mathf.Abs(scale.x) * (SpriteDirection == (int) Mathf.Sign(moveValue) ? 1 : -1);
+                transform.localScale = scale;
+            }
 
             lastMousePosition = Input.mousePosition;
+        }
+
+        private void OnGUI()
+        {
+            if (Input.GetMouseButton(0))
+            {
+                var rect = new Rect(0, 0, Screen.width * InputRangeX * 2, InputRangeY * 2);
+                rect.center = new Vector2(clickMousePosition.x, Screen.height - clickMousePosition.y);
+                GUI.Button(rect, "+");
+            }
         }
 
         private bool GetInputMove(out float value)
         {
             if (Input.GetMouseButton(0))
             {
-                var range = Screen.width / 8f;
+                var range = Screen.width * InputRangeX;
                 var delta = (Input.mousePosition.x - clickMousePosition.x) / range;
                 value = Mathf.Clamp(delta, -1, 1);
                 return true;
@@ -107,22 +163,13 @@ namespace Platformer
         {
             if (Input.GetMouseButton(0))
             {
-                var range = 16f;
-                var delta = smoothMouseDelta.y / range;
+                var delta = smoothMouseDelta.y / InputRangeY;
                 value = Mathf.Clamp(delta, 0, 1);
                 return true;
             }
 
             value = 1;
             return Input.GetKeyDown(KeyCode.Space);
-        }
-
-        private void Flip()
-        {
-            facingRight = !facingRight;
-            Vector3 scale = transform.localScale;
-            scale.x = -scale.x;
-            transform.localScale = scale;
         }
 
         private void CheckGround()
@@ -149,6 +196,66 @@ namespace Platformer
             {
                 gameManager.coinsCounter += 1;
                 Destroy(other.gameObject);
+            }
+        }
+
+        private class JumpController
+        {
+            // Time after the player was last grounded to still allow jumping
+            public float CoyoteTime;
+
+            // Time since the last jump intention to allow when the player touched the ground
+            public float JumpBuffer;
+
+            public float JumpResetTime = 0.25f;
+            public float JumpRetractTime = 0.25f;
+
+            public float RelativeImpulse;
+
+            private float lastJumpIntention;
+            private float jumpIntention;
+            private float? jumpStartTime;
+            private float jumpEndTime = float.NegativeInfinity;
+            private float rectractingTime = float.NegativeInfinity;
+
+            private float lastGroundedTime = float.NegativeInfinity;
+
+            public void Update(bool isGrounded, float relativeAcceleration)
+            {
+                var time = Time.time;
+
+                if (isGrounded)
+                    lastGroundedTime = time;
+
+                if (time > rectractingTime + JumpRetractTime)
+                {
+                    jumpIntention = Mathf.Clamp01(jumpIntention + Mathf.Clamp01(relativeAcceleration));
+
+                    if (jumpIntention - lastJumpIntention > 0.01f)
+                    {
+                        jumpEndTime = time;
+                    }
+                    else if (time > jumpEndTime + JumpResetTime)
+                    {
+                        rectractingTime = time;
+                    }
+                }
+                else
+                {
+                    jumpIntention = 0;
+                    lastJumpIntention = 0;
+                }
+
+                if (time <= lastGroundedTime + CoyoteTime)
+                {
+                    RelativeImpulse = jumpIntention - lastJumpIntention;
+                }
+                else
+                {
+                    RelativeImpulse = 0;
+                }
+
+                lastJumpIntention = jumpIntention;
             }
         }
     }
