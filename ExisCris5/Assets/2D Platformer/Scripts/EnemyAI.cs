@@ -6,13 +6,14 @@ namespace Platformer
 {
     public class EnemyAI : MonoBehaviour
     {
-        public float moveSpeed = 1f; 
+        public float moveSpeed = 1f;
         public LayerMask ground;
-        public LayerMask wall;
 
-        private Rigidbody2D rigidbody; 
-        public Collider2D triggerCollider;
-        
+        public Collider2D GroundDetector;
+        public Collider2D WallDetector;
+
+        private Rigidbody2D rigidbody;
+
         void Start()
         {
             rigidbody = GetComponent<Rigidbody2D>();
@@ -25,15 +26,17 @@ namespace Platformer
 
         void FixedUpdate()
         {
-            if(!triggerCollider.IsTouchingLayers(ground) || triggerCollider.IsTouchingLayers(wall))
+            if (!GroundDetector.IsTouchingLayers(ground) || WallDetector.IsTouchingLayers(ground))
             {
                 Flip();
             }
         }
-        
+
         private void Flip()
         {
-            transform.localScale = new Vector2(transform.localScale.x * -1, transform.localScale.y);
+            var scale = transform.localScale;
+            scale.x = -scale.x;
+            transform.localScale = scale;
             moveSpeed *= -1;
         }
     }

@@ -9,8 +9,10 @@ namespace Platformer
         public float movingSpeed;
         public float jumpForce;
 
+        public float GroundDetectionWidth = 1f;
         public float GroundDetectionRadius = 0.2f;
         public float NearGroundDetectionRadius = 0.2f;
+        public float ArtifactCheckRadius = 1f;
 
         public float CoyoteTime;
         public float JumpBuffer;
@@ -19,10 +21,16 @@ namespace Platformer
         public float JumpDecay = 1f;
 
         public int SpriteDirection = 1;
+        
+        public LayerMask GroundMask = -1;
+        public LayerMask ArtifactMask;
 
         public float InputRangeX = 1f / 8f;
         public float InputRangeY = 16;
 
+        public CapsuleCollider2D GroundDetector;
+        public CapsuleCollider2D NearGroundDetector;
+        
         [HideInInspector] public bool deathState = false;
 
         private bool isGrounded;
@@ -55,6 +63,7 @@ namespace Platformer
         private void FixedUpdate()
         {
             CheckGround();
+            CheckArtifact();
         }
 
         void Update()
@@ -145,17 +154,17 @@ namespace Platformer
             lastMousePosition = Input.mousePosition;
         }
 
-        private void OnGUI()
-        {
-            GUI.Button(new Rect(0, 0, 120, 20), $"JI={jumpController.jumpIntention}");
-
-            if (Input.GetMouseButton(0))
-            {
-                var rect = new Rect(0, 0, Screen.width * InputRangeX * 2, InputRangeY * 2);
-                rect.center = new Vector2(clickMousePosition.x, Screen.height - clickMousePosition.y);
-                GUI.Button(rect, "+");
-            }
-        }
+        // private void OnGUI()
+        // {
+        //     GUI.Button(new Rect(0, 0, 120, 20), $"JI={jumpController.jumpIntention}");
+        //
+        //     if (Input.GetMouseButton(0))
+        //     {
+        //         var rect = new Rect(0, 0, Screen.width * InputRangeX * 2, InputRangeY * 2);
+        //         rect.center = new Vector2(clickMousePosition.x, Screen.height - clickMousePosition.y);
+        //         GUI.Button(rect, "+");
+        //     }
+        // }
 
         private bool GetInputMove(out float value)
         {
@@ -184,19 +193,48 @@ namespace Platformer
             return Input.GetKeyDown(KeyCode.Space);
         }
 
-        private Collider2D[] physicsCastResults = new Collider2D[100];
-
         private void CheckGround()
         {
-            var center = groundCheck.transform.position;
+            // var center = groundCheck.transform.position;
+            //
+            // var extents = new Vector2(GroundDetectionWidth, GroundDetectionRadius);
+            // isGrounded = CheckGroundOverlap(center, extents);
+            isGrounded = GroundDetector.IsTouchingLayers(GroundMask);
 
-            var size = Physics2D.OverlapCircleNonAlloc(center, GroundDetectionRadius, physicsCastResults);
-            isGrounded = size > 1;
+            // var velocity = rigidbody.velocity;
+            // var radius = GroundDetectionRadius + Mathf.Max(-velocity.y * Time.deltaTime * NearGroundDetectionRadius, 0);
+            // extents = new Vector2(GroundDetectionWidth, radius);
+            // isNearGround = CheckGroundOverlap(center, extents);
 
-            var velocity = rigidbody.velocity;
-            var radius = GroundDetectionRadius + Mathf.Max(-velocity.y * Time.deltaTime * NearGroundDetectionRadius, 0);
-            size = Physics2D.OverlapCircleNonAlloc(center, radius, physicsCastResults);
-            isNearGround = size > 1;
+            var nearSize = GroundDetector.size;
+            nearSize.y += Mathf.Max(-rigidbody.velocity.y * Time.deltaTime * NearGroundDetectionRadius, 0);
+            NearGroundDetector.size = nearSize;
+            isNearGround = NearGroundDetector.IsTouchingLayers(GroundMask);
+        }
+
+        private Collider2D[] physicsCastResults = new Collider2D[10];
+
+        private bool CheckGroundOverlap(Vector2 center, Vector2 extents)
+        {
+            var direction = CapsuleDirection2D.Horizontal;
+            var angle = 0;
+            var size = Physics2D.OverlapCapsuleNonAlloc(center, extents * 2, direction, angle,
+                physicsCastResults, GroundMask);
+            // var size = Physics2D.OverlapCircleNonAlloc(center, extents.y, physicsCastResults, GroundMask);
+            return size > 0;
+        }
+        
+        private void CheckArtifact()
+        {
+            var center = transform.position;
+            var collider = Physics2D.OverlapCircle(center, ArtifactCheckRadius, ArtifactMask);
+
+            if (collider)
+            {
+                var spriteRenderer = collider.GetComponent<SpriteRenderer>();
+                gameManager.AddArtifact(spriteRenderer.sprite);
+                Destroy(collider.gameObject);
+            }
         }
 
         private void OnCollisionEnter2D(Collision2D other)

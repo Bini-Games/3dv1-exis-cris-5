@@ -10,9 +10,13 @@ namespace Platformer
         public int coinsCounter = 0;
 
         public GameObject playerGameObject;
-        private PlayerController player;
         public GameObject deathPlayerPrefab;
         public Text coinText;
+
+        public GameObject ArtifactTemplate;
+        public RectTransform ArtifactsContainer;
+        
+        private PlayerController player;
 
         void Start()
         {
@@ -35,6 +39,14 @@ namespace Platformer
             }
         }
 
+        public void AddArtifact(Sprite sprite)
+        {
+            var artifact = Instantiate(ArtifactTemplate, ArtifactsContainer);
+            artifact.SetActive(true);
+            var image = artifact.GetComponent<Image>();
+            image.sprite = sprite;
+        }
+        
         private void ReloadLevel()
         {
             Application.LoadLevel(Application.loadedLevel);
