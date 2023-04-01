@@ -13,14 +13,25 @@ namespace Platformer
         public GameObject deathPlayerPrefab;
         public Text coinText;
 
+        public Color HiddenArtifactColor = new Color(0, 0, 0, 0.5f);
         public GameObject ArtifactTemplate;
         public RectTransform ArtifactsContainer;
-        
+
         private PlayerController player;
 
         void Start()
         {
             player = GameObject.Find("Player").GetComponent<PlayerController>();
+
+            var artifactsInScene = GameObject.FindGameObjectsWithTag("Artifact");
+            foreach (var artifactObject in artifactsInScene)
+            {
+                if (!artifactObject.activeInHierarchy)
+                    continue;
+
+                var spriteRenderer = artifactObject.GetComponent<SpriteRenderer>();
+                AddArtifact(spriteRenderer.sprite, false);
+            }
         }
 
         void Update()
@@ -39,14 +50,34 @@ namespace Platformer
             }
         }
 
-        public void AddArtifact(Sprite sprite)
+        public void AddArtifact(Sprite sprite, bool visible = true)
         {
-            var artifact = Instantiate(ArtifactTemplate, ArtifactsContainer);
-            artifact.SetActive(true);
-            var image = artifact.GetComponent<Image>();
-            image.sprite = sprite;
+            var image = FindArtifact(sprite);
+
+            if (!image)
+            {
+                var artifact = Instantiate(ArtifactTemplate, ArtifactsContainer);
+                artifact.SetActive(true);
+                image = artifact.GetComponent<Image>();
+                image.sprite = sprite;
+            }
+
+            image.color = visible ? Color.white : HiddenArtifactColor;
         }
-        
+
+        private Image FindArtifact(Sprite sprite)
+        {
+            foreach (Transform child in ArtifactsContainer.transform)
+            {
+                var image = child.GetComponent<Image>();
+
+                if (image.sprite == sprite)
+                    return image;
+            }
+
+            return null;
+        }
+
         private void ReloadLevel()
         {
             Application.LoadLevel(Application.loadedLevel);

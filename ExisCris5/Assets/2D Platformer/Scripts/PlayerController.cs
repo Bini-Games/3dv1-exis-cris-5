@@ -6,6 +6,10 @@ namespace Platformer
 {
     public class PlayerController : MonoBehaviour
     {
+        public Joystick joystick;
+        public float JoystickJumpUpper = 0.5f;
+        public float JoystickJumpLower = 0.4f;
+
         public float movingSpeed;
         public float jumpForce;
         public float MovementDeadZone = 0.25f;
@@ -44,12 +48,11 @@ namespace Platformer
 
         private Vector3 mouseDelta;
         private Vector3 smoothMouseDelta;
-        private float lastJumpValue;
-        private float minJumpInterval = 0.25f;
-        private float nextJumpTime = float.NegativeInfinity;
         private float clickMouseTime = float.NegativeInfinity;
         private Vector3 clickMousePosition;
         private Vector3 lastMousePosition;
+
+        private bool wasJumpJoystick;
 
         private JumpController jumpController = new JumpController();
 
@@ -95,16 +98,13 @@ namespace Platformer
                 smoothMouseDelta = default;
             }
 
-            {
+            if (!joystick) {
                 var delta = smoothMouseDelta.y / (InputRangeY * Screen.height);
                 jumpController.CoyoteTime = CoyoteTime;
                 jumpController.JumpDecay = JumpDecay;
                 jumpController.JumpLevels = JumpLevels;
                 jumpController.Update(isNearGround, delta);
             }
-
-            if (!isGrounded || (Time.time > nextJumpTime) || (smoothMouseDelta.y < 0))
-                lastJumpValue = 0;
 
             if (GetInputMove(out var moveValue) && (Mathf.Abs(moveValue) > MovementDeadZone))
             {
@@ -117,15 +117,19 @@ namespace Platformer
                 if (isGrounded) animator.SetInteger("playerState", 0); // Turn on idle animation
             }
 
-            if (jumpController.RelativeImpulse > 0)
+            if (GetInputJump(out var jumpValue) && isGrounded)
+            {
+                jumpValue *= jumpForce;
+                rigidbody.AddForce(transform.up * jumpValue, ForceMode2D.Impulse);
+            }
+            else if (jumpController.RelativeImpulse > 0)
             {
                 var velocity = rigidbody.velocity;
                 velocity.y = Mathf.Max(velocity.y, 0);
                 rigidbody.velocity = velocity;
 
-                var jumpValue = jumpController.RelativeImpulse * jumpForce;
-                rigidbody.AddForce(transform.up * jumpValue, ForceMode2D.Impulse);
-                nextJumpTime = Time.time + minJumpInterval;
+                var impulse = jumpController.RelativeImpulse * jumpForce;
+                rigidbody.AddForce(transform.up * impulse, ForceMode2D.Impulse);
             }
 
             if (!isGrounded)
@@ -178,12 +182,24 @@ namespace Platformer
 
         private bool GetInputMove(out float value)
         {
-            if (Input.GetMouseButton(0))
+            if (!joystick)
             {
-                var range = Screen.width * InputRangeX;
-                var delta = (Input.mousePosition.x - clickMousePosition.x) / range;
-                value = Mathf.Clamp(delta, -1, 1);
-                return true;
+                if (Input.GetMouseButton(0))
+                {
+                    var range = Screen.width * InputRangeX;
+                    var delta = (Input.mousePosition.x - clickMousePosition.x) / range;
+                    value = Mathf.Clamp(delta, -1, 1);
+                    return true;
+                }
+            }
+
+            if (joystick)
+            {
+                if (joystick.Horizontal != 0)
+                {
+                    value = joystick.Horizontal;
+                    return true;
+                }
             }
 
             value = Input.GetAxis("Horizontal");
@@ -192,11 +208,35 @@ namespace Platformer
 
         private bool GetInputJump(out float value)
         {
-            if (Input.GetMouseButton(0))
+            // if (Input.GetMouseButton(0))
+            // {
+            //     var delta = smoothMouseDelta.y / InputRangeY;
+            //     value = Mathf.Clamp(delta, 0, 1);
+            //     return true;
+            // }
+
+            if (joystick)
             {
-                var delta = smoothMouseDelta.y / InputRangeY;
-                value = Mathf.Clamp(delta, 0, 1);
-                return true;
+                var isJumpJoystickNow = false;
+
+                if (wasJumpJoystick)
+                {
+                    if (joystick.Vertical < JoystickJumpLower)
+                    {
+                        wasJumpJoystick = false;
+                    }
+                }
+                else
+                {
+                    isJumpJoystickNow = joystick.Vertical > JoystickJumpUpper;
+                    wasJumpJoystick = isJumpJoystickNow;
+                }
+                
+                if (isJumpJoystickNow)
+                {
+                    value = 1;
+                    return true;
+                }
             }
 
             value = 1;
