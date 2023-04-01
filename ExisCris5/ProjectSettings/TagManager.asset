@@ -14,9 +14,9 @@ TagManager:
   - Water
   - UI
   - 
-  - 
-  - 
-  - Character
+  - Player
+  - Projectile
+  - Enemy
   - Artifact
   - 
   - 
