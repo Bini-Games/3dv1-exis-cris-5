@@ -9,10 +9,14 @@ namespace Platformer
         public float movingSpeed;
         public float jumpForce;
 
+        public float GroundDetectionRadius = 0.2f;
+        public float NearGroundDetectionRadius = 0.2f;
+
         public float CoyoteTime;
         public float JumpBuffer;
         public float JumpResetTime = 0.25f;
         public float JumpRetractTime = 0.25f;
+        public float JumpDecay = 1f;
 
         public int SpriteDirection = 1;
 
@@ -22,6 +26,7 @@ namespace Platformer
         [HideInInspector] public bool deathState = false;
 
         private bool isGrounded;
+        private bool isNearGround;
         public Transform groundCheck;
 
         private new Transform transform;
@@ -86,7 +91,8 @@ namespace Platformer
                 jumpController.JumpBuffer = JumpBuffer;
                 jumpController.JumpResetTime = JumpResetTime;
                 jumpController.JumpRetractTime = JumpRetractTime;
-                jumpController.Update(isGrounded, delta);
+                jumpController.JumpDecay = JumpDecay;
+                jumpController.Update(isNearGround, delta);
             }
 
             if (!isGrounded || (Time.time > nextJumpTime) || (smoothMouseDelta.y < 0))
@@ -114,6 +120,10 @@ namespace Platformer
             // }
             if (jumpController.RelativeImpulse > 0)
             {
+                var velocity = rigidbody.velocity;
+                velocity.y = Mathf.Max(velocity.y, 0);
+                rigidbody.velocity = velocity;
+
                 var jumpValue = jumpController.RelativeImpulse * jumpForce;
                 rigidbody.AddForce(transform.up * jumpValue, ForceMode2D.Impulse);
                 nextJumpTime = Time.time + minJumpInterval;
@@ -137,6 +147,8 @@ namespace Platformer
 
         private void OnGUI()
         {
+            GUI.Button(new Rect(0, 0, 120, 20), $"JI={jumpController.jumpIntention}");
+
             if (Input.GetMouseButton(0))
             {
                 var rect = new Rect(0, 0, Screen.width * InputRangeX * 2, InputRangeY * 2);
@@ -172,10 +184,19 @@ namespace Platformer
             return Input.GetKeyDown(KeyCode.Space);
         }
 
+        private Collider2D[] physicsCastResults = new Collider2D[100];
+
         private void CheckGround()
         {
-            Collider2D[] colliders = Physics2D.OverlapCircleAll(groundCheck.transform.position, 0.2f);
-            isGrounded = colliders.Length > 1;
+            var center = groundCheck.transform.position;
+
+            var size = Physics2D.OverlapCircleNonAlloc(center, GroundDetectionRadius, physicsCastResults);
+            isGrounded = size > 1;
+
+            var velocity = rigidbody.velocity;
+            var radius = GroundDetectionRadius + Mathf.Max(-velocity.y * Time.deltaTime * NearGroundDetectionRadius, 0);
+            size = Physics2D.OverlapCircleNonAlloc(center, radius, physicsCastResults);
+            isNearGround = size > 1;
         }
 
         private void OnCollisionEnter2D(Collision2D other)
@@ -210,13 +231,14 @@ namespace Platformer
             public float JumpResetTime = 0.25f;
             public float JumpRetractTime = 0.25f;
 
+            public float JumpDecay = 1f;
+
             public float RelativeImpulse;
 
             private float lastJumpIntention;
-            private float jumpIntention;
-            private float? jumpStartTime;
+            public float jumpIntention;
             private float jumpEndTime = float.NegativeInfinity;
-            private float rectractingTime = float.NegativeInfinity;
+            private float retractingTime = float.NegativeInfinity;
 
             private float lastGroundedTime = float.NegativeInfinity;
 
@@ -227,24 +249,28 @@ namespace Platformer
                 if (isGrounded)
                     lastGroundedTime = time;
 
-                if (time > rectractingTime + JumpRetractTime)
-                {
-                    jumpIntention = Mathf.Clamp01(jumpIntention + Mathf.Clamp01(relativeAcceleration));
-
-                    if (jumpIntention - lastJumpIntention > 0.01f)
-                    {
-                        jumpEndTime = time;
-                    }
-                    else if (time > jumpEndTime + JumpResetTime)
-                    {
-                        rectractingTime = time;
-                    }
-                }
-                else
-                {
-                    jumpIntention = 0;
-                    lastJumpIntention = 0;
-                }
+                // if (time > retractingTime + JumpRetractTime)
+                // {
+                //     jumpIntention = Mathf.Clamp01(jumpIntention + Mathf.Clamp01(relativeAcceleration));
+                //
+                //     if (jumpIntention - lastJumpIntention > 0.01f)
+                //     {
+                //         jumpEndTime = time;
+                //     }
+                //     else if (time > jumpEndTime + JumpResetTime)
+                //     {
+                //         retractingTime = time;
+                //     }
+                // }
+                // else
+                // {
+                //     jumpIntention = 0;
+                //     lastJumpIntention = 0;
+                // }
+                var jumpDecay = JumpDecay * Time.deltaTime;
+                // jumpIntention = Mathf.Clamp01(jumpIntention + Mathf.Clamp01(relativeAcceleration) - jumpDecay);
+                jumpIntention = Mathf.Clamp01(jumpIntention + relativeAcceleration - jumpDecay);
+                lastJumpIntention = Mathf.Min(lastJumpIntention, jumpIntention);
 
                 if (time <= lastGroundedTime + CoyoteTime)
                 {
