@@ -69,17 +69,9 @@ namespace Platformer
             audioSource.loop = loop;
             audioSource.spatialize = false;
             audioSource.playOnAwake = false;
-
-            if (loop)
-            {
-                audioSource.clip = clip;
-                audioSource.volume = volume;
-                audioSource.Play();
-            }
-            else
-            {
-                audioSource.PlayOneShot(clip, volume);
-            }
+            audioSource.clip = clip;
+            audioSource.volume = volume;
+            audioSource.Play();
 
             audioSources.Add(audioSource);
 

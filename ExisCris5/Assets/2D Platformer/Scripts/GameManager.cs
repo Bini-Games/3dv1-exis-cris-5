@@ -68,7 +68,9 @@ namespace Platformer
         private void OnDescriptionButtonClick()
         {
             HumanContainer.gameObject.SetActive(true);
-            SoundPlayer.Instance.Play(ProfessionDescription);
+            
+            if (!SoundPlayer.Instance.IsPlaying(ProfessionDescription))
+                SoundPlayer.Instance.Play(ProfessionDescription);
         }
 
         void Update()
