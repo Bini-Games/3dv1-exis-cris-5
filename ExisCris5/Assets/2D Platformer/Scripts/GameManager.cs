@@ -21,7 +21,8 @@ namespace Platformer
         public Image HumanContainer;
         public Button DescriptionButton;
         public GameObject[] ControlsObjects;
-        
+        public GameObject OverlayObject;
+
         public int coinsCounter = 0;
 
         public GameObject playerGameObject;
@@ -30,7 +31,7 @@ namespace Platformer
 
         public float DeathRestartDelay = 3;
         public AudioClip RestartSound;
-        
+
         public Color HiddenArtifactColor = new Color(0, 0, 0, 0.5f);
         public GameObject ArtifactTemplate;
         public RectTransform ArtifactsContainer;
@@ -117,7 +118,11 @@ namespace Platformer
                 {
                     foreach (var controlsObject in ControlsObjects)
                         controlsObject.SetActive(false);
-                
+
+                    OverlayObject.SetActive(true);
+
+                    player.IsUserControlled = false;
+
                     RobotContainer.gameObject.SetActive(true);
                 }
             }

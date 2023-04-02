@@ -11,6 +11,8 @@ namespace Platformer
         public AudioClip BlasterSound;
         public AudioClip DeathSound;
 
+        public bool IsUserControlled = true;
+        
         public bool UseJoystick = true;
         public Joystick joystick;
         public float JoystickJumpUpper = 0.5f;
@@ -113,31 +115,37 @@ namespace Platformer
                 jumpController.Update(isNearGround, delta);
             }
 
-            if (GetInputMove(out var moveValue) && (Mathf.Abs(moveValue) > MovementDeadZone))
+            if (IsUserControlled && GetInputMove(out var moveValue) && (Mathf.Abs(moveValue) > MovementDeadZone))
             {
                 moveValue *= movingSpeed;
                 transform.position += transform.right * (moveValue * Time.deltaTime);
                 animator.SetInteger("playerState", 1); // Turn on run animation
+
+                if ((System.Math.Abs(moveValue) > 0))
+                    AlignSprite(moveValue);
             }
             else
             {
                 if (isGrounded) animator.SetInteger("playerState", 0); // Turn on idle animation
             }
 
-            if (GetInputJump(out var jumpValue) && isGrounded)
+            if (IsUserControlled)
             {
-                SoundPlayer.Instance.Play(JumpSound);
-                jumpValue *= jumpForce;
-                rigidbody.AddForce(transform.up * jumpValue, ForceMode2D.Impulse);
-            }
-            else if (jumpController.RelativeImpulse > 0)
-            {
-                var velocity = rigidbody.velocity;
-                velocity.y = Mathf.Max(velocity.y, 0);
-                rigidbody.velocity = velocity;
+                if (GetInputJump(out var jumpValue) && isGrounded)
+                {
+                    SoundPlayer.Instance.Play(JumpSound);
+                    jumpValue *= jumpForce;
+                    rigidbody.AddForce(transform.up * jumpValue, ForceMode2D.Impulse);
+                }
+                else if (jumpController.RelativeImpulse > 0)
+                {
+                    var velocity = rigidbody.velocity;
+                    velocity.y = Mathf.Max(velocity.y, 0);
+                    rigidbody.velocity = velocity;
 
-                var impulse = jumpController.RelativeImpulse * jumpForce;
-                rigidbody.AddForce(transform.up * impulse, ForceMode2D.Impulse);
+                    var impulse = jumpController.RelativeImpulse * jumpForce;
+                    rigidbody.AddForce(transform.up * impulse, ForceMode2D.Impulse);
+                }
             }
 
             if (!isGrounded)
@@ -146,31 +154,29 @@ namespace Platformer
                 animator.SetInteger("playerState", isUp ? 2 : 3); // Turn on jump animation
             }
 
-            if ((System.Math.Abs(moveValue) > 0))
-            {
-                AlignSprite(moveValue);
-            }
-
-            if (IsShooting() && !IsTouchOverUI())
-            {
-                var camera = Camera.main;
-                var targetPosition = camera.ScreenToWorldPoint(Input.mousePosition);
-                var sourcePosition = ProjectileTemplate.transform.position;
-                var deltaVector = (Vector2)(targetPosition - sourcePosition);
-                AlignSprite(deltaVector.x);
-                
-                var projectile = Instantiate(ProjectileTemplate);
-                projectile.SetActive(true);
-                projectile.transform.position = sourcePosition;
-                var projectileRigidbody = projectile.GetComponent<Rigidbody2D>();
-                projectileRigidbody.velocity = deltaVector.normalized * ProjectileSpeed;
-                
-                SoundPlayer.Instance.Play(BlasterSound);
-
-                rigidbody.AddForce(-deltaVector * RecoilForce, ForceMode2D.Impulse);
-            }
+            if (IsUserControlled && IsShooting() && !IsTouchOverUI())
+                ShootBlaster();
             
             lastMousePosition = Input.mousePosition;
+        }
+
+        private void ShootBlaster()
+        {
+            var camera = Camera.main;
+            var targetPosition = camera.ScreenToWorldPoint(Input.mousePosition);
+            var sourcePosition = ProjectileTemplate.transform.position;
+            var deltaVector = (Vector2) (targetPosition - sourcePosition);
+            AlignSprite(deltaVector.x);
+
+            var projectile = Instantiate(ProjectileTemplate);
+            projectile.SetActive(true);
+            projectile.transform.position = sourcePosition;
+            var projectileRigidbody = projectile.GetComponent<Rigidbody2D>();
+            projectileRigidbody.velocity = deltaVector.normalized * ProjectileSpeed;
+
+            SoundPlayer.Instance.Play(BlasterSound);
+
+            rigidbody.AddForce(-deltaVector * RecoilForce, ForceMode2D.Impulse);
         }
 
         private bool IsShooting()

@@ -33,7 +33,7 @@ namespace Platformer
             {
                 var audioSource = audioSources[index];
 
-                if (!audioSource || !audioSource.isPlaying)
+                if (!audioSource || !(audioSource.isPlaying | audioSource.loop))
                 {
                     Destroy(audioSource.gameObject);
                     audioSources.RemoveAt(index);
