@@ -5229,6 +5229,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8367f8f5ad069264c8b1b800b031e6c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  JumpSound: {fileID: 8300000, guid: 048d20e3e62a1cd48a9feeebefba546c, type: 3}
+  BlasterSound: {fileID: 8300000, guid: d2f76b91b09c9ad42ba8be76a3193461, type: 3}
+  DeathSound: {fileID: 8300000, guid: 17b6fac376d64b244aa20c28da62d1d1, type: 3}
   joystick: {fileID: 0}
   JoystickJumpUpper: 0.4
   JoystickJumpLower: 0.3
