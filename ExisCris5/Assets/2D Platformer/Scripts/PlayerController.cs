@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Platformer
 {
@@ -148,7 +149,8 @@ namespace Platformer
                 AlignSprite(moveValue);
             }
 
-            if (Input.GetMouseButtonUp(0) && (Time.time < clickMouseTime + ShootTime))
+            // if (Input.GetMouseButtonUp(0) && (Time.time < clickMouseTime + ShootTime))
+            if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
             {
                 var camera = Camera.main;
                 var targetPosition = camera.ScreenToWorldPoint(Input.mousePosition);
@@ -277,7 +279,7 @@ namespace Platformer
         {
             if (other.gameObject.tag == "Enemy")
             {
-                deathState = true; // Say to GameManager that player is dead
+                deathState = true;
                 SoundPlayer.Instance.Play(DeathSound);
             }
         }
@@ -288,6 +290,11 @@ namespace Platformer
             {
                 gameManager.coinsCounter += 1;
                 Destroy(other.gameObject);
+            }
+            else if (other.gameObject.tag == "Enemy")
+            {
+                deathState = true;
+                SoundPlayer.Instance.Play(DeathSound);
             }
         }
 
