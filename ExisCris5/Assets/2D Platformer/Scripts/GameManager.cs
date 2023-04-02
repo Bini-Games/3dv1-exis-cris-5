@@ -37,9 +37,16 @@ namespace Platformer
         public GameObject ArtifactTemplate;
         public RectTransform ArtifactsContainer;
 
+        public GameObject FinalSplash;
+        public AudioClip FinalNarration;
+        public float FinalFadeSpeed = 1;
+        
         private PlayerController player;
 
         private int remainingArtifacts;
+
+        private bool isProfessionDescribing;
+        private bool isFinalNarration;
 
         void Start()
         {
@@ -68,9 +75,14 @@ namespace Platformer
         private void OnDescriptionButtonClick()
         {
             HumanContainer.gameObject.SetActive(true);
-            
-            if (!SoundPlayer.Instance.IsPlaying(ProfessionDescription))
+
+            if (!isProfessionDescribing && !SoundPlayer.Instance.IsPlaying(ProfessionDescription))
+            {
+                SoundPlayer.Instance.SetVolume(MusicSound, 0.25f, true);
+
                 SoundPlayer.Instance.Play(ProfessionDescription);
+                isProfessionDescribing = true;
+            }
         }
 
         void Update()
@@ -86,6 +98,21 @@ namespace Platformer
                 deathPlayer.transform.localScale = playerTransform.localScale;
                 player.deathState = false;
                 Invoke("ReloadLevel", DeathRestartDelay);
+            }
+
+            if (!isFinalNarration && isProfessionDescribing && !SoundPlayer.Instance.IsPlaying(ProfessionDescription))
+            {
+                FinalSplash.SetActive(true);
+                var finalImage = FinalSplash.GetComponent<Image>();
+                var color = finalImage.color;
+                color.a = Mathf.Clamp01(color.a + Time.deltaTime * FinalFadeSpeed);
+                finalImage.color = color;
+
+                if (color.a >= 1)
+                {
+                    SoundPlayer.Instance.Play(FinalNarration);
+                    isFinalNarration = true;
+                }
             }
         }
 

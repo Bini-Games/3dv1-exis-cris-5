@@ -7,8 +7,6 @@ namespace Platformer
     {
         private List<AudioSource> audioSources = new List<AudioSource>();
 
-        // private static HashSet<AudioClip> loopedClips = new HashSet<AudioClip>();
-
         public static SoundPlayer Instance;
 
         private static HashSet<AudioClip> reloadSoundQueue = new HashSet<AudioClip>();
@@ -16,17 +14,16 @@ namespace Platformer
         private void Awake()
         {
             Instance = this;
-            // gameObject.hideFlags = HideFlags.DontSave;
         }
 
         private void Start()
         {
             foreach (var clip in reloadSoundQueue)
                 Play(clip);
-            
+
             reloadSoundQueue.Clear();
         }
-        
+
         private void Update()
         {
             for (var index = audioSources.Count - 1; index >= 0; index--)
@@ -43,9 +40,6 @@ namespace Platformer
 
         public bool IsPlaying(AudioClip clip)
         {
-            // if (loopedClips.Contains(clip))
-            //     return true;
-
             foreach (var audioSource in audioSources)
             {
                 if (audioSource && (audioSource.clip == clip) && audioSource.isPlaying)
@@ -53,6 +47,17 @@ namespace Platformer
             }
 
             return false;
+        }
+
+        public void SetVolume(AudioClip clip, float volume, bool multiply = false)
+        {
+            foreach (var audioSource in audioSources)
+            {
+                if (!audioSource || (audioSource.clip != clip))
+                    continue;
+
+                audioSource.volume = multiply ? volume * audioSource.volume : volume;
+            }
         }
 
         public void AddToQueue(AudioClip clip)
@@ -74,9 +79,6 @@ namespace Platformer
             audioSource.Play();
 
             audioSources.Add(audioSource);
-
-            // if (loop)
-            //     loopedClips.Add(clip);
         }
     }
 }
