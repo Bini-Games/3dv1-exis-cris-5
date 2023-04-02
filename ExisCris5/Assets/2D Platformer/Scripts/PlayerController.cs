@@ -41,6 +41,7 @@ namespace Platformer
         public GameObject ProjectileTemplate;
         public float ShootTime = 0.125f;
         public float ProjectileSpeed = 1;
+        public float RecoilForce = 1;
         
         [HideInInspector] public bool deathState;
 
@@ -165,6 +166,8 @@ namespace Platformer
                 projectileRigidbody.velocity = deltaVector.normalized * ProjectileSpeed;
                 
                 SoundPlayer.Instance.Play(BlasterSound);
+
+                rigidbody.AddForce(-deltaVector * RecoilForce, ForceMode2D.Impulse);
             }
             
             lastMousePosition = Input.mousePosition;
