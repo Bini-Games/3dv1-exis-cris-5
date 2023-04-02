@@ -10,7 +10,8 @@ namespace Platformer
         public AudioClip JumpSound;
         public AudioClip BlasterSound;
         public AudioClip DeathSound;
-        
+
+        public bool UseJoystick = true;
         public Joystick joystick;
         public float JoystickJumpUpper = 0.5f;
         public float JoystickJumpLower = 0.4f;
@@ -103,7 +104,7 @@ namespace Platformer
                 smoothMouseDelta = default;
             }
 
-            if (!joystick) {
+            if (!CanUseJoystick()) {
                 var delta = smoothMouseDelta.y / (InputRangeY * Screen.height);
                 jumpController.CoyoteTime = CoyoteTime;
                 jumpController.JumpDecay = JumpDecay;
@@ -149,8 +150,7 @@ namespace Platformer
                 AlignSprite(moveValue);
             }
 
-            // if (Input.GetMouseButtonUp(0) && (Time.time < clickMouseTime + ShootTime))
-            if (Input.GetMouseButtonDown(0) && !EventSystem.current.IsPointerOverGameObject())
+            if (IsShooting() && !IsTouchOverUI())
             {
                 var camera = Camera.main;
                 var targetPosition = camera.ScreenToWorldPoint(Input.mousePosition);
@@ -168,6 +168,30 @@ namespace Platformer
             }
             
             lastMousePosition = Input.mousePosition;
+        }
+
+        private bool IsShooting()
+        {
+            if (CanUseJoystick())
+                return Input.GetMouseButtonDown(0);
+
+            return Input.GetMouseButtonUp(0) && (Time.time < clickMouseTime + ShootTime);
+        }
+
+        private bool IsTouchOverUI()
+        {
+            var eventSystem = EventSystem.current;
+
+            if (!eventSystem) return false;
+
+            if (eventSystem.IsPointerOverGameObject(PointerInputModule.kMouseLeftId)) return true;
+
+            foreach (var touch in Input.touches)
+            {
+                if (eventSystem.IsPointerOverGameObject(touch.fingerId)) return true;
+            }
+
+            return false;
         }
 
         private void AlignSprite(float moveValue)
@@ -191,7 +215,7 @@ namespace Platformer
 
         private bool GetInputMove(out float value)
         {
-            if (!joystick)
+            if (!CanUseJoystick())
             {
                 if (Input.GetMouseButton(0))
                 {
@@ -202,7 +226,7 @@ namespace Platformer
                 }
             }
 
-            if (joystick && joystick.isActiveAndEnabled)
+            if (CanUseJoystick() && joystick.isActiveAndEnabled)
             {
                 if (joystick.Horizontal != 0)
                 {
@@ -224,7 +248,7 @@ namespace Platformer
             //     return true;
             // }
 
-            if (joystick && joystick.isActiveAndEnabled)
+            if (CanUseJoystick() && joystick.isActiveAndEnabled)
             {
                 var isJumpJoystickNow = false;
 
@@ -250,6 +274,11 @@ namespace Platformer
 
             value = 1;
             return Input.GetKeyDown(KeyCode.Space);
+        }
+
+        private bool CanUseJoystick()
+        {
+            return UseJoystick && joystick;
         }
 
         private void CheckGround()

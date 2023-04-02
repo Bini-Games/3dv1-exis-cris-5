@@ -82,6 +82,11 @@ namespace Platformer
             }
         }
 
+        public void ToggleUseJoystick()
+        {
+            player.UseJoystick = !player.UseJoystick;
+        }
+
         public void AddArtifact(Sprite sprite, bool visible = true)
         {
             var image = FindArtifact(sprite);
