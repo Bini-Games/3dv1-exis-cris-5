@@ -28,6 +28,9 @@ namespace Platformer
         public GameObject deathPlayerPrefab;
         public Text coinText;
 
+        public float DeathRestartDelay = 3;
+        public AudioClip RestartSound;
+        
         public Color HiddenArtifactColor = new Color(0, 0, 0, 0.5f);
         public GameObject ArtifactTemplate;
         public RectTransform ArtifactsContainer;
@@ -78,7 +81,7 @@ namespace Platformer
                     playerTransform.position, playerTransform.rotation);
                 deathPlayer.transform.localScale = playerTransform.localScale;
                 player.deathState = false;
-                // Invoke("ReloadLevel", 3);
+                Invoke("ReloadLevel", DeathRestartDelay);
             }
         }
 
@@ -135,6 +138,7 @@ namespace Platformer
 
         private void ReloadLevel()
         {
+            SoundPlayer.Instance.AddToQueue(RestartSound);
             Application.LoadLevel(Application.loadedLevel);
         }
     }

@@ -7489,6 +7489,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 21300000, guid: 1bf552d094fb00343ae9debcf56b4ee3, type: 3}
     - target: {fileID: 8125563719255511135, guid: 6cdb5ef6764ef30448310aba99d170e7, type: 3}
+      propertyPath: RestartSound
+      value: 
+      objectReference: {fileID: 8300000, guid: b0f68886c6c362d47be19c883a638259, type: 3}
+    - target: {fileID: 8125563719255511135, guid: 6cdb5ef6764ef30448310aba99d170e7, type: 3}
       propertyPath: HumanContainer
       value: 
       objectReference: {fileID: 53993131}
