@@ -202,7 +202,7 @@ namespace Platformer
                 }
             }
 
-            if (joystick)
+            if (joystick && joystick.isActiveAndEnabled)
             {
                 if (joystick.Horizontal != 0)
                 {
@@ -224,7 +224,7 @@ namespace Platformer
             //     return true;
             // }
 
-            if (joystick)
+            if (joystick && joystick.isActiveAndEnabled)
             {
                 var isJumpJoystickNow = false;
 

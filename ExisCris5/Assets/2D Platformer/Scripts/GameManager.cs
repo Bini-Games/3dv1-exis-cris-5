@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Platformer
@@ -12,6 +13,15 @@ namespace Platformer
         public AudioClip AllArtifactsSound;
         public float MusicVolume = 1;
 
+        public Sprite RobotSprite;
+        public Sprite HumanSprite;
+        public AudioClip ProfessionDescription;
+
+        public Image RobotContainer;
+        public Image HumanContainer;
+        public Button DescriptionButton;
+        public GameObject[] ControlsObjects;
+        
         public int coinsCounter = 0;
 
         public GameObject playerGameObject;
@@ -44,6 +54,16 @@ namespace Platformer
 
             if (!SoundPlayer.Instance.IsPlaying(MusicSound))
                 SoundPlayer.Instance.Play(MusicSound, MusicVolume, true);
+
+            RobotContainer.sprite = RobotSprite;
+            HumanContainer.sprite = HumanSprite;
+            DescriptionButton.onClick.AddListener(OnDescriptionButtonClick);
+        }
+
+        private void OnDescriptionButtonClick()
+        {
+            HumanContainer.gameObject.SetActive(true);
+            SoundPlayer.Instance.Play(ProfessionDescription);
         }
 
         void Update()
@@ -84,6 +104,14 @@ namespace Platformer
                     SoundPlayer.Instance.Play(GotArtifactSound);
                 else
                     SoundPlayer.Instance.Play(AllArtifactsSound);
+
+                if (remainingArtifacts == 0)
+                {
+                    foreach (var controlsObject in ControlsObjects)
+                        controlsObject.SetActive(false);
+                
+                    RobotContainer.gameObject.SetActive(true);
+                }
             }
         }
 
