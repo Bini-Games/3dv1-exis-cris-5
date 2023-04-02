@@ -9,6 +9,7 @@ namespace Platformer
     public class GameManager : MonoBehaviour
     {
         public AudioClip MusicSound;
+        public AudioClip GotCoinSound;
         public AudioClip GotArtifactSound;
         public AudioClip AllArtifactsSound;
         public float MusicVolume = 1;

@@ -326,6 +326,7 @@ namespace Platformer
         {
             if (other.gameObject.tag == "Coin")
             {
+                SoundPlayer.Instance.Play(gameManager.GotCoinSound);
                 gameManager.coinsCounter += 1;
                 Destroy(other.gameObject);
             }
