@@ -7,16 +7,26 @@ namespace Platformer
     {
         private List<AudioSource> audioSources = new List<AudioSource>();
 
-        private static HashSet<AudioClip> loopedClips = new HashSet<AudioClip>();
+        // private static HashSet<AudioClip> loopedClips = new HashSet<AudioClip>();
 
         public static SoundPlayer Instance;
+
+        private static HashSet<AudioClip> reloadSoundQueue = new HashSet<AudioClip>();
 
         private void Awake()
         {
             Instance = this;
-            gameObject.hideFlags = HideFlags.DontSave;
+            // gameObject.hideFlags = HideFlags.DontSave;
         }
 
+        private void Start()
+        {
+            foreach (var clip in reloadSoundQueue)
+                Play(clip);
+            
+            reloadSoundQueue.Clear();
+        }
+        
         private void Update()
         {
             for (var index = audioSources.Count - 1; index >= 0; index--)
@@ -33,8 +43,8 @@ namespace Platformer
 
         public bool IsPlaying(AudioClip clip)
         {
-            if (loopedClips.Contains(clip))
-                return true;
+            // if (loopedClips.Contains(clip))
+            //     return true;
 
             foreach (var audioSource in audioSources)
             {
@@ -45,6 +55,11 @@ namespace Platformer
             return false;
         }
 
+        public void AddToQueue(AudioClip clip)
+        {
+            reloadSoundQueue.Add(clip);
+        }
+
         public void Play(AudioClip clip, float volume = 1, bool loop = false)
         {
             var soundObject = new GameObject(clip.name);
@@ -52,14 +67,24 @@ namespace Platformer
 
             var audioSource = soundObject.AddComponent<AudioSource>();
             audioSource.loop = loop;
-            audioSource.playOnAwake = false;
             audioSource.spatialize = false;
-            audioSource.PlayOneShot(clip, volume);
+            audioSource.playOnAwake = false;
+
+            if (loop)
+            {
+                audioSource.clip = clip;
+                audioSource.volume = volume;
+                audioSource.Play();
+            }
+            else
+            {
+                audioSource.PlayOneShot(clip, volume);
+            }
 
             audioSources.Add(audioSource);
 
-            if (loop)
-                loopedClips.Add(clip);
+            // if (loop)
+            //     loopedClips.Add(clip);
         }
     }
 }

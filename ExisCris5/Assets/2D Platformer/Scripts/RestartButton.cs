@@ -10,7 +10,8 @@ public class RestartButton : MonoBehaviour
 
     public void RestartGame()
     {
-        SoundPlayer.Instance.Play(RestartSound);
+        SoundPlayer.Instance.AddToQueue(RestartSound);
+        // SoundPlayer.Instance.Play(RestartSound);
         
         //SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         Application.LoadLevel(Application.loadedLevel);
