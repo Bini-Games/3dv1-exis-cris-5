@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Platformer
 {
-    public class EnemyAI : MonoBehaviour
+    public class EnemyAI : DestructableEntity
     {
         public float moveSpeed = 1f;
         public LayerMask ground;

@@ -6,6 +6,10 @@ namespace Platformer
 {
     public class PlayerController : MonoBehaviour
     {
+        public AudioClip JumpSound;
+        public AudioClip BlasterSound;
+        public AudioClip DeathSound;
+        
         public Joystick joystick;
         public float JoystickJumpUpper = 0.5f;
         public float JoystickJumpLower = 0.4f;
@@ -119,6 +123,7 @@ namespace Platformer
 
             if (GetInputJump(out var jumpValue) && isGrounded)
             {
+                SoundPlayer.Instance.Play(JumpSound);
                 jumpValue *= jumpForce;
                 rigidbody.AddForce(transform.up * jumpValue, ForceMode2D.Impulse);
             }
@@ -156,6 +161,8 @@ namespace Platformer
                 projectile.transform.position = sourcePosition;
                 var projectileRigidbody = projectile.GetComponent<Rigidbody2D>();
                 projectileRigidbody.velocity = deltaVector.normalized * ProjectileSpeed;
+                
+                SoundPlayer.Instance.Play(BlasterSound);
             }
             
             lastMousePosition = Input.mousePosition;
@@ -271,10 +278,7 @@ namespace Platformer
             if (other.gameObject.tag == "Enemy")
             {
                 deathState = true; // Say to GameManager that player is dead
-            }
-            else
-            {
-                deathState = false;
+                SoundPlayer.Instance.Play(DeathSound);
             }
         }
 

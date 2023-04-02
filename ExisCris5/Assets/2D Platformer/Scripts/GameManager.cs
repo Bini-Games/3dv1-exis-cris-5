@@ -7,6 +7,11 @@ namespace Platformer
 {
     public class GameManager : MonoBehaviour
     {
+        public AudioClip MusicSound;
+        public AudioClip GotArtifactSound;
+        public AudioClip AllArtifactsSound;
+        public float MusicVolume = 1;
+
         public int coinsCounter = 0;
 
         public GameObject playerGameObject;
@@ -18,6 +23,8 @@ namespace Platformer
         public RectTransform ArtifactsContainer;
 
         private PlayerController player;
+
+        private int remainingArtifacts;
 
         void Start()
         {
@@ -31,7 +38,12 @@ namespace Platformer
 
                 var spriteRenderer = artifactObject.GetComponent<SpriteRenderer>();
                 AddArtifact(spriteRenderer.sprite, false);
+
+                remainingArtifacts++;
             }
+
+            if (!SoundPlayer.Instance.IsPlaying(MusicSound))
+                SoundPlayer.Instance.Play(MusicSound, MusicVolume, true);
         }
 
         void Update()
@@ -40,13 +52,13 @@ namespace Platformer
 
             if (player.deathState)
             {
+                var playerTransform = playerGameObject.transform;
                 playerGameObject.SetActive(false);
                 GameObject deathPlayer = Instantiate(deathPlayerPrefab,
-                    playerGameObject.transform.position, playerGameObject.transform.rotation);
-                deathPlayer.transform.localScale = new Vector3(playerGameObject.transform.localScale.x,
-                    playerGameObject.transform.localScale.y, playerGameObject.transform.localScale.z);
+                    playerTransform.position, playerTransform.rotation);
+                deathPlayer.transform.localScale = playerTransform.localScale;
                 player.deathState = false;
-                Invoke("ReloadLevel", 3);
+                // Invoke("ReloadLevel", 3);
             }
         }
 
@@ -63,6 +75,16 @@ namespace Platformer
             }
 
             image.color = visible ? Color.white : HiddenArtifactColor;
+
+            if (visible)
+            {
+                remainingArtifacts--;
+
+                if (remainingArtifacts > 0)
+                    SoundPlayer.Instance.Play(GotArtifactSound);
+                else
+                    SoundPlayer.Instance.Play(AllArtifactsSound);
+            }
         }
 
         private Image FindArtifact(Sprite sprite)

@@ -239,6 +239,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3b58017ee8b2ee948a8c914a618d12b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  DeathSound: {fileID: 8300000, guid: 175fa761932284647aa4ce30883cc6f4, type: 3}
   moveSpeed: 2
   ground:
     serializedVersion: 2

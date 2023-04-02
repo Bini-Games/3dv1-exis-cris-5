@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Platformer;
 using UnityEngine;
 
 public class LaserProjectile : MonoBehaviour
@@ -23,10 +24,10 @@ public class LaserProjectile : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D other)
     {
-        if (other.gameObject.CompareTag("Enemy"))
-        {
-            Destroy(other.gameObject);
-        }
+        var destructableEntity = other.gameObject.GetComponent<DestructableEntity>();
+        
+        if (destructableEntity)
+            destructableEntity.Die();
 
         if (ExplosionTemplate)
         {
