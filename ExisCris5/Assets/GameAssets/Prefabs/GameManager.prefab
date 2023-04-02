@@ -1,0 +1,73 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8125563719255511132
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8125563719255511134}
+  - component: {fileID: 8125563719255511135}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8125563719255511134
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8125563719255511132}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8125563719255511135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8125563719255511132}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d255ee49c2be2343b958ec319cdf534, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MusicSound: {fileID: 8300000, guid: 1c6db4f1f9dd89943ae45ef47ebddbaa, type: 3}
+  GotCoinSound: {fileID: 8300000, guid: a8dd5ecf3d86d2f41bf258575b8d5cd5, type: 3}
+  GotArtifactSound: {fileID: 8300000, guid: b712b573af2b7f74ebc45bea2afd99fa, type: 3}
+  AllArtifactsSound: {fileID: 8300000, guid: 74ec66cb7e0983846ae94d8981e52666, type: 3}
+  MusicVolume: 0.35
+  RobotSprite: {fileID: 21300000, guid: 5870b5421f7ec0442b92c288951add21, type: 3}
+  HumanSprite: {fileID: 21300000, guid: a4e9b3863e7718044b8d66ec993f982a, type: 3}
+  ProfessionDescription: {fileID: 8300000, guid: dbad6200141afea4ba1f7af3bb60a21c, type: 3}
+  RobotContainer: {fileID: 0}
+  HumanContainer: {fileID: 0}
+  DescriptionButton: {fileID: 0}
+  ControlsObjects:
+  - {fileID: 0}
+  - {fileID: 0}
+  OverlayObject: {fileID: 0}
+  coinsCounter: 0
+  playerGameObject: {fileID: 0}
+  deathPlayerPrefab: {fileID: 1904219114179032792, guid: 798a6396cbec6cc4bbf4c6447558fad6, type: 3}
+  coinText: {fileID: 0}
+  DeathRestartDelay: 3
+  RestartSound: {fileID: 8300000, guid: b0f68886c6c362d47be19c883a638259, type: 3}
+  HiddenArtifactColor: {r: 0, g: 0, b: 0, a: 0.3764706}
+  ArtifactTemplate: {fileID: 0}
+  ArtifactsContainer: {fileID: 0}
+  FinalSplash: {fileID: 0}
+  FinalNarration: {fileID: 8300000, guid: 01d713902e8378f4ba49c5dffccc986d, type: 3}
+  FinalFadeSpeed: 1
